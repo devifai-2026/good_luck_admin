@@ -140,7 +140,7 @@ const Matrimony = () => {
 
       {/* Modal */}
       {isModalOpen && selectedProfile && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4 mt-16">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-end  z-50 p-4 mt-16">
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-3xl max-h-[80vh] overflow-y-auto">
             {/* Header */}
             <div className="sticky top-0 bg-white dark:bg-gray-900 z-10 p-6 pb-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-start">

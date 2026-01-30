@@ -44,30 +44,73 @@ const AdminAd = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [images, setImages] = useState<ImageType[]>([]);
   const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState(false);
   const [editingAdId, setEditingAdId] = useState<string | null>(null);
 
- const { getRootProps, getInputProps } = useDropzone({
-  accept: {
-    "image/png": [],
-    "image/jpeg": [],
-  },
-  multiple: true,
-  onDrop: (acceptedFiles) => {
-    const previews = acceptedFiles.map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-      id: `${Date.now()}-${Math.random()}`,
-    }));
-    setImages((prev) => [...prev, ...previews]);
-    setUploaded(false);
-  },
-  onDropRejected: () => {
-    toast.error("Only PNG and JPEG images are allowed!");
-  },
-});
+  const { getRootProps, getInputProps } = useDropzone({
+    accept: {
+      "image/png": [],
+      "image/jpeg": [],
+    },
+    multiple: true,
+    onDrop: (acceptedFiles) => {
+      const previews = acceptedFiles.map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+        id: `${Date.now()}-${Math.random()}`,
+      }));
+      setImages((prev) => [...prev, ...previews]);
+      setUploaded(false);
+    },
+    onDropRejected: () => {
+      toast.error("Only PNG and JPEG images are allowed!");
+    },
+  });
 
+  // Phone validation function
+  const validatePhone = (phoneNumber: string): boolean => {
+    // Remove any non-digit characters
+    const cleaned = phoneNumber.replace(/\D/g, "");
+    
+    // Check if it's exactly 10 digits
+    if (cleaned.length !== 10) {
+      setPhoneError("Phone number must be exactly 10 digits");
+      return false;
+    }
+    
+    // Check if it starts with a valid digit (usually 6-9 in India)
+    if (!/^[6-9]/.test(cleaned)) {
+      setPhoneError("Phone number must start with 6, 7, 8, or 9");
+      return false;
+    }
+    
+    // Check if all digits are the same (like 9999999999)
+    if (/^(\d)\1{9}$/.test(cleaned)) {
+      setPhoneError("Invalid phone number");
+      return false;
+    }
+    
+    setPhoneError("");
+    return true;
+  };
+
+  const handlePhoneChange = (value: string) => {
+    // Allow only digits and limit to 10 characters
+    const digitsOnly = value.replace(/\D/g, "");
+    const truncated = digitsOnly.slice(0, 10);
+    setPhone(truncated);
+    
+    // Validate when user has entered 10 digits or on blur
+    if (truncated.length === 10) {
+      validatePhone(truncated);
+    } else if (truncated.length > 0 && truncated.length < 10) {
+      setPhoneError("Phone number must be 10 digits");
+    } else {
+      setPhoneError("");
+    }
+  };
 
   const revokePreviews = (imgs: ImageType[]) => {
     imgs.forEach((img) => {
@@ -96,6 +139,7 @@ const AdminAd = () => {
   const closeAddModal = () => {
     setIsAddOpen(false);
     setPhone("");
+    setPhoneError("");
     revokePreviews(images);
     setImages([]);
     setUploaded(false);
@@ -104,6 +148,7 @@ const AdminAd = () => {
   const openEditModal = (ad: AdminAd) => {
     setEditingAdId(ad._id);
     setPhone(ad.phone);
+    setPhoneError("");
     setImages([
       { file: null, preview: ad.image, url: ad.image, id: `${Date.now()}-0` },
     ]);
@@ -114,6 +159,7 @@ const AdminAd = () => {
     setIsEditOpen(false);
     setEditingAdId(null);
     setPhone("");
+    setPhoneError("");
     revokePreviews(images);
     setImages([]);
   };
@@ -142,10 +188,19 @@ const AdminAd = () => {
     }
   };
 
-  // Step 2: Create Ad
+  // Step 2: Create Ad with validation
   const handleCreateAd = async () => {
     if (!uploaded) return toast.error("Please upload images first");
-    if (!phone.trim()) return toast.error("Please provide phone number");
+    
+    // Validate phone
+    if (!phone.trim()) {
+      setPhoneError("Phone number is required");
+      return;
+    }
+    
+    if (!validatePhone(phone)) {
+      return; // Error already set by validatePhone
+    }
 
     setUploading(true);
     try {
@@ -170,6 +225,16 @@ const AdminAd = () => {
   const handleUpdateAd = async () => {
     if (!editingAdId) return;
     if (images.length === 0) return toast.error("Please upload at least one image");
+    
+    // Validate phone
+    if (!phone.trim()) {
+      setPhoneError("Phone number is required");
+      return;
+    }
+    
+    if (!validatePhone(phone)) {
+      return;
+    }
 
     setUploading(true);
     try {
@@ -212,46 +277,55 @@ const AdminAd = () => {
         <div className="flex justify-end mb-6">
           <button
             onClick={openAddModal}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Create Admin Ad
           </button>
         </div>
 
         {ads.length === 0 ? (
-          <p className="text-gray-500">No Admin Ads available.</p>
+          <p className="text-gray-500 text-center py-8">No Admin Ads available.</p>
         ) : (
-          <ul className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {ads.map((ad) => (
               <li
                 key={ad._id}
-                className="border p-4 rounded-lg shadow relative group"
+                className="border border-gray-200 rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow relative group bg-white"
               >
                 <img
                   src={ad.image}
                   alt="Ad Image"
-                  className="w-full h-40 object-cover rounded-lg"
+                  className="w-full h-48 object-cover rounded-lg mb-3"
                 />
-                <p className="mt-2 font-semibold">Phone: {ad.phone}</p>
-                <p className="text-sm text-gray-500">
-                  Active: {ad.isActive ? "Yes" : "No"}
-                </p>
-                <p className="text-xs text-gray-400">
-                  {new Date(ad.createdAt).toLocaleString()}
-                </p>
+                <div className="space-y-2">
+                  <p className="font-medium text-gray-800">
+                    <span className="font-semibold">Phone:</span> {ad.phone}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium">Status:</span>{" "}
+                    <span className={`font-semibold ${ad.isActive ? "text-green-600" : "text-red-600"}`}>
+                      {ad.isActive ? "Active" : "Inactive"}
+                    </span>
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Created: {new Date(ad.createdAt).toLocaleString()}
+                  </p>
+                </div>
 
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition flex gap-2">
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
                   <button
                     onClick={() => openEditModal(ad)}
-                    className="bg-yellow-500 text-white rounded p-1"
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white rounded-full p-2 shadow-md transition-colors"
+                    title="Edit"
                   >
-                    <TbFilterEdit />
+                    <TbFilterEdit size={18} />
                   </button>
                   <button
                     onClick={() => handleDeleteAd(ad._id)}
-                    className="bg-red-500 text-white rounded p-1"
+                    className="bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-md transition-colors"
+                    title="Delete"
                   >
-                    <RiDeleteBin6Line />
+                    <RiDeleteBin6Line size={18} />
                   </button>
                 </div>
               </li>
@@ -264,67 +338,116 @@ const AdminAd = () => {
       <Dialog open={isAddOpen} onClose={closeAddModal} className="fixed inset-0 z-50">
         <div className="fixed inset-0 bg-black bg-opacity-30" aria-hidden="true" />
         <div className="flex items-center justify-center min-h-screen px-4">
-          <Dialog.Panel className="bg-white rounded-xl max-w-md w-full p-6 z-50 relative">
-            <Dialog.Title className="text-xl font-bold mb-4">
+          <Dialog.Panel className="bg-white rounded-xl max-w-md w-full p-6 z-50 relative shadow-2xl">
+            <Dialog.Title className="text-xl font-bold mb-4 text-gray-800">
               Create Admin Ad
             </Dialog.Title>
 
-            <input
-              type="text"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg p-2 mb-4"
-              placeholder="Phone number"
-            />
-
-            <div
-              {...getRootProps()}
-              className="border-2 border-dashed p-4 rounded-lg text-center cursor-pointer"
-            >
-              <input {...getInputProps()} />
-              <p>Drag & drop images here, or click to select files</p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Phone Number *
+              </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => handlePhoneChange(e.target.value)}
+                onBlur={() => validatePhone(phone)}
+                className={`w-full border ${phoneError ? "border-red-500" : "border-gray-300"} rounded-lg p-3 focus:outline-none focus:ring-2 ${phoneError ? "focus:ring-red-500" : "focus:ring-blue-500"}`}
+                placeholder="Enter 10-digit phone number"
+                maxLength={10}
+              />
+              {phoneError && (
+                <p className="mt-1 text-sm text-red-600">{phoneError}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">
+                Must be exactly 10 digits (e.g., 9876543210)
+              </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 mt-4">
-              {images.map((img, idx) => (
-                <div key={img.id} className="relative">
-                  <img
-                    src={img.url || img.preview}
-                    alt={`Preview ${idx + 1}`}
-                    className="w-full h-24 object-cover rounded"
-                  />
-                  <button
-                    onClick={() => handleRemoveImage(img.id)}
-                    className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                  >
-                    ×
-                  </button>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Ad Image *
+              </label>
+              <div
+                {...getRootProps()}
+                className="border-2 border-dashed border-gray-300 p-6 rounded-lg text-center cursor-pointer hover:border-blue-400 transition-colors bg-gray-50"
+              >
+                <input {...getInputProps()} />
+                <div className="text-gray-500">
+                  <svg className="mx-auto h-12 w-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="font-medium">Drag & drop images here</p>
+                  <p className="text-sm mt-1">or click to select files</p>
+                  <p className="text-xs mt-2 text-gray-400">Supports: PNG, JPEG</p>
                 </div>
-              ))}
+              </div>
             </div>
 
-            <div className="flex justify-end gap-2 mt-4">
-              <button onClick={closeAddModal} className="px-4 py-2 border rounded">
+            {images.length > 0 && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Selected Images ({images.length})
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {images.map((img, idx) => (
+                    <div key={img.id} className="relative group">
+                      <img
+                        src={img.url || img.preview}
+                        alt={`Preview ${idx + 1}`}
+                        className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                      />
+                      <button
+                        onClick={() => handleRemoveImage(img.id)}
+                        className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-700"
+                        title="Remove image"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={closeAddModal}
+                className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
                 Cancel
               </button>
 
               {!uploaded ? (
                 <button
                   onClick={handleUploadImages}
-                  disabled={uploading}
-                  className={`px-4 py-2 text-white rounded ${
-                    uploading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+                  disabled={uploading || images.length === 0}
+                  className={`px-5 py-2.5 text-white rounded-lg font-medium transition-colors ${
+                    uploading || images.length === 0
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-700"
                   }`}
                 >
-                  {uploading ? "Uploading..." : "Upload"}
+                  {uploading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      Uploading...
+                    </span>
+                  ) : (
+                    "Upload Images"
+                  )}
                 </button>
               ) : (
                 <button
                   onClick={handleCreateAd}
-                  disabled={uploading}
-                  className="px-4 py-2 text-white rounded bg-green-600 hover:bg-green-700"
+                  disabled={uploading || !phone || phoneError !== ""}
+                  className={`px-5 py-2.5 text-white rounded-lg font-medium transition-colors ${
+                    uploading || !phone || phoneError !== ""
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-green-600 hover:bg-green-700"
+                  }`}
                 >
-                  {uploading ? "Creating..." : "Create"}
+                  {uploading ? "Creating..." : "Create Ad"}
                 </button>
               )}
             </div>
@@ -332,61 +455,106 @@ const AdminAd = () => {
         </div>
       </Dialog>
 
-      {/* Edit Modal */}
+      {/* Edit Modal - Updated with validation */}
       <Dialog open={isEditOpen} onClose={closeEditModal} className="fixed inset-0 z-50">
         <div className="fixed inset-0 bg-black bg-opacity-30" aria-hidden="true" />
         <div className="flex items-center justify-center min-h-screen px-4">
-          <Dialog.Panel className="bg-white rounded-xl max-w-md w-full p-6 z-50 relative">
-            <Dialog.Title className="text-xl font-bold mb-4">
+          <Dialog.Panel className="bg-white rounded-xl max-w-md w-full p-6 z-50 relative shadow-2xl">
+            <Dialog.Title className="text-xl font-bold mb-4 text-gray-800">
               Edit Admin Ad
             </Dialog.Title>
 
-            <input
-              type="text"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg p-2 mb-4"
-              placeholder="Phone number"
-            />
-
-            <div
-              {...getRootProps()}
-              className="border-2 border-dashed p-4 rounded-lg text-center cursor-pointer"
-            >
-              <input {...getInputProps()} />
-              <p>Drag & drop images here, or click to select files</p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Phone Number *
+              </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => handlePhoneChange(e.target.value)}
+                onBlur={() => validatePhone(phone)}
+                className={`w-full border ${phoneError ? "border-red-500" : "border-gray-300"} rounded-lg p-3 focus:outline-none focus:ring-2 ${phoneError ? "focus:ring-red-500" : "focus:ring-blue-500"}`}
+                placeholder="Enter 10-digit phone number"
+                maxLength={10}
+              />
+              {phoneError && (
+                <p className="mt-1 text-sm text-red-600">{phoneError}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">
+                Must be exactly 10 digits (e.g., 9876543210)
+              </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 mt-4">
-              {images.map((img, idx) => (
-                <div key={img.id} className="relative">
-                  <img
-                    src={img.url || img.preview}
-                    alt={`Preview ${idx + 1}`}
-                    className="w-full h-24 object-cover rounded"
-                  />
-                  <button
-                    onClick={() => handleRemoveImage(img.id)}
-                    className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                  >
-                    ×
-                  </button>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Ad Image *
+              </label>
+              <div
+                {...getRootProps()}
+                className="border-2 border-dashed border-gray-300 p-6 rounded-lg text-center cursor-pointer hover:border-blue-400 transition-colors bg-gray-50"
+              >
+                <input {...getInputProps()} />
+                <div className="text-gray-500">
+                  <svg className="mx-auto h-12 w-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="font-medium">Drag & drop new image</p>
+                  <p className="text-sm mt-1">or click to select files</p>
+                  <p className="text-xs mt-2 text-gray-400">Supports: PNG, JPEG</p>
                 </div>
-              ))}
+              </div>
             </div>
 
-            <div className="flex justify-end gap-2 mt-4">
-              <button onClick={closeEditModal} className="px-4 py-2 border rounded">
+            {images.length > 0 && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Current Image
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {images.map((img, idx) => (
+                    <div key={img.id} className="relative group">
+                      <img
+                        src={img.url || img.preview}
+                        alt={`Preview ${idx + 1}`}
+                        className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                      />
+                      <button
+                        onClick={() => handleRemoveImage(img.id)}
+                        className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-700"
+                        title="Remove image"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={closeEditModal}
+                className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
                 Cancel
               </button>
               <button
                 onClick={handleUpdateAd}
-                disabled={uploading}
-                className={`px-4 py-2 text-white rounded ${
-                  uploading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+                disabled={uploading || phoneError !== ""}
+                className={`px-5 py-2.5 text-white rounded-lg font-medium transition-colors ${
+                  uploading || phoneError !== ""
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700"
                 }`}
               >
-                {uploading ? "Updating..." : "Update"}
+                {uploading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Updating...
+                  </span>
+                ) : (
+                  "Update Ad"
+                )}
               </button>
             </div>
           </Dialog.Panel>

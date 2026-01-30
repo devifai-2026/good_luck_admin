@@ -458,7 +458,7 @@ const CalenderEvent = () => {
                     <img
                       src={img.url || img.preview}
                       alt={`Preview ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg shadow-md border border-black"
+                      className="w-full h-32  rounded-lg shadow-md border border-black"
                     />
                     <span className="absolute top-1 left-1 bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
                       {index + 1}

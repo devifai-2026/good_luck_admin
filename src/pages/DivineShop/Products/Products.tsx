@@ -87,76 +87,97 @@ const Products = () => {
   };
   
   // ✅ Handle Form Submission
-  const handleAddProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
 
-    if (!formData.productName || !formData.category || !formData.displayPrice) {
-      Swal.fire({
-        title: "Error!",
-        text: "Please fill in all required fields.",
-        icon: "error",
-        confirmButtonColor: "#d33",
-      });
-      return;
-    }
+const handleAddProduct = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    setLoading(true);
+  if (!formData.productName || !formData.category || !formData.displayPrice) {
+    Swal.fire({
+      title: "Error!",
+      text: "Please fill in all required fields.",
+      icon: "error",
+      confirmButtonColor: "#d33",
+    });
+    return;
+  }
 
-    try {
-      let imageUrl = '';
+  setLoading(true);
 
-      // ✅ Upload image to Cloudinary if a file is selected
-      if (formData.image instanceof File) {
-        imageUrl = await uploadImageToCloudinary(formData.image);
-        if (!imageUrl) {
-          Swal.fire({
-            title: "Error!",
-            text: "Image upload failed.",
-            icon: "error",
-            confirmButtonColor: "#d33",
-          });
-          setLoading(false);
-          return;
-        }
-      } else {
-        // Use existing URL string if no new file selected
-        imageUrl = formData.image as string;
+  try {
+    let imageUrl = '';
+
+    // ✅ Upload image to Cloudinary if a file is selected
+    if (formData.image instanceof File) {
+      imageUrl = await uploadImageToCloudinary(formData.image);
+      if (!imageUrl) {
+        Swal.fire({
+          title: "Error!",
+          text: "Image upload failed.",
+          icon: "error",
+          confirmButtonColor: "#d33",
+        });
+        setLoading(false);
+        return;
       }
-
-      // ✅ Create product data with uploaded image URL
-      const productData = {
-        ...formData,
-        image: imageUrl,
-      };
-
-      // ✅ Send product data to backend
-      const response = await axiosInstance.post("/product/createProduct", productData);
-
-      console.log("Product Created:", response.data);
-
-      // ✅ Update UI with the new product
-      fetchProducts();
-
-      Swal.fire({
-        title: "Success!",
-        text: "Product added successfully!",
-        icon: "success",
-        confirmButtonColor: "#3085d6",
-      });
-
-      setShowModal(false); // ✅ Close modal
-    } catch (error) {
-      console.error("Error adding product:", error);
-      Swal.fire({
-        title: "Error!",
-        text: "Failed to add product. Please try again.",
-        icon: "error",
-        confirmButtonColor: "#d33",
-      });
-    } finally {
-      setLoading(false);
+    } else {
+      // Use existing URL string if no new file selected
+      imageUrl = formData.image as string;
     }
-  };
+
+    // ✅ Create product data with uploaded image URL
+    const productData = {
+      ...formData,
+      image: imageUrl,
+    };
+
+    // ✅ Send product data to backend
+    const response = await axiosInstance.post("/product/createProduct", productData);
+
+    console.log("Product Created:", response.data);
+
+    // ✅ Update UI with the new product IMMEDIATELY
+    if (response.data.data) {
+      setProducts(prev => [response.data.data, ...prev]);
+    }
+
+    Swal.fire({
+      title: "Success!",
+      text: "Product added successfully!",
+      icon: "success",
+      confirmButtonColor: "#3085d6",
+    });
+
+    // ✅ Reset form and close modal
+    setFormData({
+      productName: '',
+      productDescription: '',
+      category: '',
+      displayPrice: 0,
+      originalPrice: 0,
+      in_stock: true,
+      image: '',
+      brand: '',
+      rating: 0,
+      weight: ''
+    });
+    
+    setShowModal(false);
+    
+    // ✅ Also refresh the list from server to ensure consistency
+    fetchProducts();
+
+  } catch (error) {
+    console.error("Error adding product:", error);
+    Swal.fire({
+      title: "Error!",
+      text: "Failed to add product. Please try again.",
+      icon: "error",
+      confirmButtonColor: "#d33",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ✅ Open Add Product Form
   const handleAddProductClick = () => {

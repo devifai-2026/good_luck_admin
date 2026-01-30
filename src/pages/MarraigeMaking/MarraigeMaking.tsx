@@ -125,7 +125,7 @@ const MarriageMaking = () => {
 
       {/* Modern Modal */}
       {isModalOpen && selectedMarriage && (
-  <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50 mt-16">
+  <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-end p-4 z-50 mt-16">
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] overflow-y-auto border border-gray-200 dark:border-gray-700">
       {/* Modal Header */}
       <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-5 text-white">

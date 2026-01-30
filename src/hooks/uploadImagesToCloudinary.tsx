@@ -1,31 +1,28 @@
-
 export const uploadImageToCloudinary = async (file: File): Promise<string> => {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onloadend = async () => {
-      try {
-        const res = await fetch("https://api.cloudinary.com/v1_1/dd5tqor5g/image/upload", {
-          method: "POST",
-          body: JSON.stringify({
-            file: reader.result,
-            upload_preset: "goodluck_admin",
-          }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        const data = await res.json();
-        if (data.secure_url) {
-          resolve(data.secure_url);
-        } else {
-          reject(new Error("Image upload failed"));
-        }
-      } catch (error) {
-        reject(error);
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'goodluck_admin');
+    
+    const response = await fetch(
+      'https://api.cloudinary.com/v1_1/dd5tqor5g/image/upload',
+      {
+        method: 'POST',
+        body: formData,
+        // Do NOT set Content-Type header for FormData
       }
-    };
-    reader.onerror = () => reject(new Error("FileReader failed"));
-  });
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Upload failed');
+    }
+
+    const data = await response.json();
+    return data.secure_url;
+    
+  } catch (error) {
+    console.error('Cloudinary upload error:', error);
+    throw error;
+  }
 };
