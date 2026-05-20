@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Breadcrumb from '../../components/Breadcrumbs/Breadcrumb';
 
 const Customer = () => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const customers = [
     {
       id: 1,
@@ -89,61 +89,61 @@ const Customer = () => {
         </div>
 
         {/* Modal */}
-{isModalOpen && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-    <div className="bg-white p-6 rounded-lg shadow-lg w-96 dark:bg-gray-900">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        Recharge Wallet
-      </h2>
+        {isModalOpen && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-96 dark:bg-gray-900">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Recharge Wallet
+              </h2>
 
-      {/* Name */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          Name
-        </label>
-        <input
-          type="text"
-          className="mt-1 w-full px-3 py-2 border rounded-md focus:ring focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-        />
-      </div>
+              {/* Name */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full px-3 py-2 border rounded-md focus:ring focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
 
-     {/* Amount */}
-<div className="mb-4">
-  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-    Amount
-  </label>
-  <select
-    className="mt-1 w-full px-3 py-2 border rounded-md focus:ring focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-  >
-    <option value="" disabled selected>Select Amount</option>
-    <option value="25">₹25</option>
-    <option value="50">₹50</option>
-    <option value="100">₹100</option>
-    <option value="200">₹200</option>
-    <option value="500">₹500</option>
-    <option value="1000">₹1000</option>
-  </select>
-</div>
+              {/* Amount */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Amount
+                </label>
+                <select
+                  className="mt-1 w-full px-3 py-2 border rounded-md focus:ring focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                >
+                  <option value="" disabled selected>Select Amount</option>
+                  <option value="25">₹25</option>
+                  <option value="50">₹50</option>
+                  <option value="100">₹100</option>
+                  <option value="200">₹200</option>
+                  <option value="500">₹500</option>
+                  <option value="1000">₹1000</option>
+                </select>
+              </div>
 
-    
 
-      {/* Buttons */}
-      <div className="flex justify-end gap-2">
-        <button
-          className="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500 focus:outline-none"
-          onClick={() => setIsModalOpen(false)}
-        >
-          Cancel
-        </button>
-        <button
-          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none"
-        >
-          Recharge
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+
+              {/* Buttons */}
+              <div className="flex justify-end gap-2">
+                <button
+                  className="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500 focus:outline-none"
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none"
+                >
+                  Recharge
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Table Headers */}
         <div className="grid grid-cols-2 sm:grid-cols-6 md:grid-cols-8 border-t border-stroke py-4.5 px-4 dark:border-strokedark md:px-6 2xl:px-7.5">

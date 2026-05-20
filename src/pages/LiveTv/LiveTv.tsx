@@ -118,11 +118,36 @@ const handleSubmit = async (e: React.FormEvent) => {
     }));
   };
 
+  // Handle delete
+  const handleDelete = async (channel: LiveTvChannel) => {
+    const result = await Swal.fire({
+      title: 'Delete Channel?',
+      text: `Are you sure you want to delete "${channel.channelName}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!',
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await axiosInstance.delete(`/liveTv/delete/${channel._id}`);
+      Swal.fire('Deleted!', 'The channel has been deleted.', 'success');
+      fetchChannels();
+    } catch (error) {
+      console.error('Error deleting channel:', error);
+      Swal.fire('Error!', 'Failed to delete the channel. Please try again.', 'error');
+    }
+  };
+
   // Extract YouTube video ID
-  const extractVideoId = (url: string) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const extractVideoId = (url: string): string | null => {
+    if (!url) return null;
+    const regExp = /(?:youtube\.com\/(?:watch\?.*?v=|embed\/|v\/|live\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
     const match = url.match(regExp);
-    return match && match[2].length === 11 ? match[2] : null;
+    return match ? match[1] : null;
   };
 
   return (
@@ -162,7 +187,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   <p className="text-sm text-gray-600 dark:text-gray-300">{channel.category}</p>
                 </div>
               </div>
-              <div className="mt-4 flex justify-end">
+              <div className="mt-4 flex justify-end gap-3">
                 <button
                   onClick={() => handleEdit(channel)}
                   className="text-blue-500 hover:text-blue-700 dark:hover:text-blue-400 flex items-center"
@@ -176,6 +201,20 @@ const handleSubmit = async (e: React.FormEvent) => {
                     />
                   </svg>
                   Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(channel)}
+                  className="text-red-500 hover:text-red-700 dark:hover:text-red-400 flex items-center"
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                  Delete
                 </button>
               </div>
             </div>

@@ -5,25 +5,32 @@ import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
 import Breadcrumb from '../../components/Breadcrumbs/Breadcrumb';
 import axiosInstance from '../../utils/axiosInstance';
+import { uploadImageToCloudinary } from '../../hooks/uploadImagesToCloudinary';
 
-// ✅ Define Category Interface
 interface Category {
   _id: string;
   name: string;
+  icon: string | null;
 }
 
 const LocalServiceCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [editCategoryData, setEditCategoryData] = useState<Category | null>(
-    null,
-  );
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [isAdding, setIsAdding] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Add modal state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newIconFile, setNewIconFile] = useState<File | null>(null);
+  const [newIconPreview, setNewIconPreview] = useState<string | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+
+  // Edit modal state
+  const [editData, setEditData] = useState<Category | null>(null);
+  const [editIconFile, setEditIconFile] = useState<File | null>(null);
+  const [editIconPreview, setEditIconPreview] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // ✅ Fetch Categories
   const fetchCategories = async () => {
@@ -72,103 +79,134 @@ const LocalServiceCategories = () => {
           await axiosInstance.delete(`/localCategory/delete/${id}`);
           setCategories((prev) => prev.filter((cat) => cat._id !== id));
           Swal.fire('Deleted!', 'Category has been deleted.', 'success');
-        } catch (error) {
+        } catch {
           Swal.fire('Error!', 'Failed to delete category.', 'error');
         }
       }
     });
   };
 
-  // ✅ Open & Close Edit Modal
-  const openEditModal = (category: Category) => {
-    setEditCategoryData(category);
+  // ✅ Add Modal
+  const openAddModal = () => {
+    setShowAddModal(true);
+    setNewName('');
+    setNewIconFile(null);
+    setNewIconPreview(null);
   };
 
-  const closeEditModal = () => {
-    setEditCategoryData(null);
+  const closeAddModal = () => {
+    setShowAddModal(false);
+    setNewName('');
+    setNewIconFile(null);
+    setNewIconPreview(null);
   };
 
-  // ✅ Handle Input Changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (editCategoryData) {
-      setEditCategoryData({
-        ...editCategoryData,
-        [e.target.name]: e.target.value,
-      });
+  const handleNewIconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setNewIconFile(file);
+      setNewIconPreview(URL.createObjectURL(file));
     }
   };
 
-  // ✅ Update Category
-  const updateCategory = async () => {
-    if (!editCategoryData) return;
-    setIsUpdating(true);
-
-    try {
-      await axiosInstance.patch(
-        `/localCategory/update/${editCategoryData._id}`,
-        {
-          name: editCategoryData.name,
-        },
-      );
-
-      setCategories((prev) =>
-        prev.map((cat) =>
-          cat._id === editCategoryData._id
-            ? { ...cat, name: editCategoryData.name }
-            : cat,
-        ),
-      );
-      toast.success('Category updated');
-      closeEditModal();
-    } catch (err) {
-      console.error(err);
-      toast.error('Update failed');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query.toLowerCase());
-  };
-
-  // ✅ Add Category
   const handleAddCategory = async () => {
-    if (!newCategoryName) {
+    if (!newName.trim()) {
       toast.error('Please enter a category name');
       return;
     }
 
     setIsAdding(true);
     try {
+      let iconURL: string | null = null;
+      if (newIconFile) {
+        iconURL = await uploadImageToCloudinary(newIconFile);
+        if (!iconURL) {
+          toast.error('Icon upload failed');
+          setIsAdding(false);
+          return;
+        }
+      }
+
       const response = await axiosInstance.post(
         '/localCategory/createLocalCategory',
-        {
-          name: newCategoryName,
-        },
+        { name: newName, icon: iconURL },
       );
 
       const newCat = response.data.data || response.data;
       setCategories((prev) => [...prev, newCat]);
-      toast.success('Category added');
-      closeAddCategoryModal();
-    } catch (err) {
-      toast.error('Add failed');
+      toast.success('Category added successfully');
+      closeAddModal();
+    } catch {
+      toast.error('Failed to add category');
     } finally {
       setIsAdding(false);
     }
   };
 
-  // ✅ Add Modal Controls
-  const openAddCategoryModal = () => {
-    setShowAddCategoryModal(true);
-    setNewCategoryName('');
+  // ✅ Edit Modal
+  const openEditModal = (category: Category) => {
+    setEditData(category);
+    setEditIconFile(null);
+    setEditIconPreview(category.icon || null);
   };
 
-  const closeAddCategoryModal = () => {
-    setShowAddCategoryModal(false);
-    setNewCategoryName('');
+  const closeEditModal = () => {
+    setEditData(null);
+    setEditIconFile(null);
+    setEditIconPreview(null);
   };
+
+  const handleEditIconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setEditIconFile(file);
+      setEditIconPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const updateCategory = async () => {
+    if (!editData) return;
+    if (!editData.name.trim()) {
+      toast.error('Category name is required');
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      let iconURL: string | null = editData.icon;
+      if (editIconFile) {
+        iconURL = await uploadImageToCloudinary(editIconFile);
+        if (!iconURL) {
+          toast.error('Icon upload failed');
+          setIsUpdating(false);
+          return;
+        }
+      }
+
+      await axiosInstance.patch(`/localCategory/update/${editData._id}`, {
+        name: editData.name,
+        icon: iconURL,
+      });
+
+      setCategories((prev) =>
+        prev.map((cat) =>
+          cat._id === editData._id
+            ? { ...cat, name: editData.name, icon: iconURL }
+            : cat,
+        ),
+      );
+      toast.success('Category updated');
+      closeEditModal();
+    } catch {
+      toast.error('Update failed');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const filteredCategories = categories.filter((cat) =>
+    cat.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   return (
     <div>
@@ -181,12 +219,11 @@ const LocalServiceCategories = () => {
             type="text"
             placeholder="Search category by name..."
             className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-
         <button
-          onClick={openAddCategoryModal}
+          onClick={openAddModal}
           className="btn bg-blue-500 text-white px-4 py-2 rounded-lg"
         >
           Add Category
@@ -201,39 +238,51 @@ const LocalServiceCategories = () => {
           </div>
         ) : error ? (
           <p className="text-center text-red-500">{error}</p>
-        ) : categories.length === 0 ? (
+        ) : filteredCategories.length === 0 ? (
           <p className="text-center text-gray-500">No categories found</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="table w-full">
               <thead>
                 <tr className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                  <th>Icon</th>
                   <th>Name</th>
                   <th className="text-center">Actions</th>
                 </tr>
               </thead>
-              <tbody className="text-center">
-                {categories
-                  .filter((cat) => cat.name.toLowerCase().includes(searchQuery))
-                  .map((cat) => (
-                    <tr key={cat._id}>
-                      <td>{cat.name}</td>
-                      <td className="space-x-2">
-                        <button
-                          className="btn btn-sm btn-outline text-blue-500"
-                          onClick={() => openEditModal(cat)}
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline text-red-500"
-                          onClick={() => deleteCategory(cat._id)}
-                        >
-                          <FaTrash />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+              <tbody>
+                {filteredCategories.map((cat) => (
+                  <tr key={cat._id}>
+                    <td>
+                      {cat.icon ? (
+                        <img
+                          src={cat.icon}
+                          alt={cat.name}
+                          className="w-12 h-12 rounded object-cover"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded bg-gray-200 dark:bg-gray-500 flex items-center justify-center text-gray-400 text-xs">
+                          No Icon
+                        </div>
+                      )}
+                    </td>
+                    <td>{cat.name}</td>
+                    <td className="text-center space-x-2">
+                      <button
+                        className="btn btn-sm btn-outline text-blue-500"
+                        onClick={() => openEditModal(cat)}
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        className="btn btn-sm btn-outline text-red-500"
+                        onClick={() => deleteCategory(cat._id)}
+                      >
+                        <FaTrash />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -241,20 +290,43 @@ const LocalServiceCategories = () => {
       </div>
 
       {/* Add Modal */}
-      {showAddCategoryModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 ">
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded w-96 dark:bg-gray-700 dark:border dark:border-gray-900">
             <h2 className="text-lg font-semibold mb-4">Add Category</h2>
+
+            {newIconPreview && (
+              <img
+                src={newIconPreview}
+                alt="Icon Preview"
+                className="w-20 h-20 mx-auto mb-3 rounded object-cover border"
+              />
+            )}
+
+            <label className="block text-sm font-medium mb-1 dark:text-gray-200">
+              Category Icon (optional)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleNewIconChange}
+              className="w-full mb-3 px-3 py-2 border rounded dark:bg-gray-600 dark:text-white"
+            />
+
+            <label className="block text-sm font-medium mb-1 dark:text-gray-200">
+              Category Name
+            </label>
             <input
               type="text"
-              value={newCategoryName}
-              onChange={(e) => setNewCategoryName(e.target.value)}
-              className="w-full mb-3 px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
-              placeholder="Category Name"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              className="w-full mb-4 px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
+              placeholder="e.g. Plumber, Electrician"
             />
+
             <div className="flex justify-between">
               <button
-                onClick={closeAddCategoryModal}
+                onClick={closeAddModal}
                 className="btn bg-gray-500 text-white w-1/2 mr-2 py-2 rounded-lg"
               >
                 Cancel
@@ -272,18 +344,44 @@ const LocalServiceCategories = () => {
       )}
 
       {/* Edit Modal */}
-      {editCategoryData && (
+      {editData && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded w-96">
-            <h2 className="text-lg font-semibold mb-4">Edit Category</h2>
+          <div className="bg-white p-6 rounded w-96 dark:bg-gray-700 dark:border dark:border-gray-900">
+            <h2 className="text-lg font-semibold mb-4 dark:text-white">
+              Edit Category
+            </h2>
+
+            {editIconPreview && (
+              <img
+                src={editIconPreview}
+                alt="Icon Preview"
+                className="w-20 h-20 mx-auto mb-3 rounded object-cover border"
+              />
+            )}
+
+            <label className="block text-sm font-medium mb-1 dark:text-gray-200">
+              Category Icon
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleEditIconChange}
+              className="w-full mb-3 px-3 py-2 border rounded dark:bg-gray-600 dark:text-white"
+            />
+
+            <label className="block text-sm font-medium mb-1 dark:text-gray-200">
+              Category Name
+            </label>
             <input
               type="text"
-              name="name"
-              value={editCategoryData.name}
-              onChange={handleInputChange}
-              className="w-full mb-3 px-3 py-2 border rounded"
+              value={editData.name}
+              onChange={(e) =>
+                setEditData({ ...editData, name: e.target.value })
+              }
+              className="w-full mb-4 px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
               placeholder="Category Name"
             />
+
             <div className="flex justify-between">
               <button
                 onClick={closeEditModal}

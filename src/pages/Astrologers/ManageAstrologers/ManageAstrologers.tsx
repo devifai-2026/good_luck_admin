@@ -148,10 +148,17 @@ const ManageAstrologers = () => {
   const handleUpdateAstrologer = async () => {
     if (!updatedAstrologer) return;
     try {
-      await axiosInstance.post(`/astrologer/updateRequest/${updatedAstrologer.authId}`, updatedAstrologer);
-      fetchAstrologers();
-      Swal.fire("Success!", "Astrologer updated successfully!", "success");
+      const payload = {
+        ...updatedAstrologer,
+        years_of_experience: Number(updatedAstrologer.years_of_experience),
+        chat_price: Number(updatedAstrologer.chat_price),
+        call_price: Number(updatedAstrologer.call_price),
+        video_price: Number(updatedAstrologer.video_price),
+      };
+      await axiosInstance.patch(`/astrologer/adminUpdate/${updatedAstrologer._id}`, payload);
       setIsEditModalOpen(false);
+      await fetchAstrologers();
+      Swal.fire("Success!", "Astrologer updated successfully!", "success");
     } catch (error) {
       console.error("Error updating astrologer:", error);
       Swal.fire("Error!", "Failed to update astrologer.", "error");

@@ -48,6 +48,7 @@ const AdminAd = () => {
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState(false);
   const [editingAdId, setEditingAdId] = useState<string | null>(null);
+  const [editIsActive, setEditIsActive] = useState(true);
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
@@ -149,6 +150,7 @@ const AdminAd = () => {
     setEditingAdId(ad._id);
     setPhone(ad.phone);
     setPhoneError("");
+    setEditIsActive(ad.isActive);
     setImages([
       { file: null, preview: ad.image, url: ad.image, id: `${Date.now()}-0` },
     ]);
@@ -160,6 +162,7 @@ const AdminAd = () => {
     setEditingAdId(null);
     setPhone("");
     setPhoneError("");
+    setEditIsActive(true);
     revokePreviews(images);
     setImages([]);
   };
@@ -225,23 +228,37 @@ const AdminAd = () => {
   const handleUpdateAd = async () => {
     if (!editingAdId) return;
     if (images.length === 0) return toast.error("Please upload at least one image");
-    
-    // Validate phone
+
     if (!phone.trim()) {
       setPhoneError("Phone number is required");
       return;
     }
-    
+
     if (!validatePhone(phone)) {
       return;
     }
 
     setUploading(true);
     try {
-      const imageUrls = images.map((img) => img.url!);
+      // Upload any new files that don't have a URL yet
+      const uploadedImages = await Promise.all(
+        images.map(async (img) => {
+          if (!img.file) return img; // already has a URL (existing image)
+          const url = await uploadImageToCloudinary(img.file);
+          return { ...img, url };
+        })
+      );
+
+      const imageUrl = uploadedImages[0]?.url;
+      if (!imageUrl) {
+        toast.error("Image upload failed. Please try again.");
+        return;
+      }
+
       const res = await axiosInstance.put(`/admin-ads/${editingAdId}`, {
-        image: imageUrls[0],
+        image: imageUrl,
         phone,
+        isActive: editIsActive,
       });
 
       setAds((prev) =>
@@ -530,6 +547,26 @@ const AdminAd = () => {
                 </div>
               </div>
             )}
+
+            <div className="mb-4 flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-700">Status</label>
+              <button
+                type="button"
+                onClick={() => setEditIsActive((prev) => !prev)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  editIsActive ? "bg-green-500" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                    editIsActive ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+              <span className={`text-sm font-semibold ${editIsActive ? "text-green-600" : "text-red-500"}`}>
+                {editIsActive ? "Active" : "Inactive"}
+              </span>
+            </div>
 
             <div className="flex justify-end gap-3 mt-6">
               <button

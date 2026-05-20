@@ -391,14 +391,21 @@ const Panchang = () => {
             <form
               onSubmit={isEditing ? handleUpdatePanchang : handleAddPanchang}
             >
-              <input
-                type="text"
-                placeholder="Enter Month"
+              <select
                 className="border p-2 w-full mb-3 dark:bg-gray-700 dark:text-gray-300"
                 value={month}
                 onChange={(e) => setMonth(e.target.value)}
                 required
-              />
+              >
+                <option value="">Select Month</option>
+                {[
+                  'January', 'February', 'March', 'April',
+                  'May', 'June', 'July', 'August',
+                  'September', 'October', 'November', 'December',
+                ].map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
               <select
                 className="border p-2 w-full mb-3 dark:bg-gray-700 dark:text-gray-300"
                 value={day}
