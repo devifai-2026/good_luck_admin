@@ -28,9 +28,7 @@ const WalletHistory = () => {
   useEffect(() => {
     const fetchWalletHistory = async () => {
       try {
-        const response = await axiosInstance.get(
-          "admin/transaction/67924ed53405f277cd255246"
-        );
+        const response = await axiosInstance.get("admin/transaction");
         setTransactions(response.data.data.transactions);
         setLoading(false);
       } catch (err) {
