@@ -21,6 +21,8 @@ interface DatingProfile {
   interests: string[];
   looking_for: string;
   isVerified: boolean;
+  isPremium: boolean;
+  subscriptionTier: 'silver' | 'gold' | 'platinum' | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -80,7 +82,8 @@ const Dating = () => {
                 <th className="px-4 py-2 text-center">Location</th>
                 <th className="px-4 py-2 text-center">Orientation</th>
                 <th className="px-4 py-2 text-center">Looking For</th>
-                <th className="px-4 py-2 text-center">Verified</th>
+                <th className="px-4 py-2 text-center">Premium</th>
+                <th className="px-4 py-2 text-center">Trusted</th>
                 <th className="px-4 py-2 text-center">Actions</th>
               </tr>
             </thead>
@@ -93,7 +96,18 @@ const Dating = () => {
                   <td className="px-4 py-2 text-center">{profile.orientation}</td>
                   <td className="px-4 py-2 text-center">{profile.looking_for}</td>
                   <td className="px-4 py-2 text-center">
-                    {profile.isVerified ? 'Yes' : 'No'}
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      profile.isPremium ? 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                    }`}>
+                      {profile.isPremium ? '★ Premium' : 'Standard'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2 text-center">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      profile.isVerified ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                    }`}>
+                      {profile.isVerified ? 'Trusted' : 'Not Trusted'}
+                    </span>
                   </td>
                   <td className="px-4 py-2 text-center flex justify-center space-x-2">
                     <button 
@@ -206,11 +220,24 @@ const Dating = () => {
                      <p className="font-medium">{selectedProfile.phone}</p>
                    </div>
                    <div>
-                     <span className="text-sm text-gray-500 dark:text-gray-400">Status</span>
+                     <span className="text-sm text-gray-500 dark:text-gray-400">Plan Tier</span>
+                     <p className="font-medium capitalize">{selectedProfile.subscriptionTier ?? 'None'}</p>
+                   </div>
+                   <div>
+                     <span className="text-sm text-gray-500 dark:text-gray-400">Premium Tag</span>
+                     <div className="flex items-center gap-2">
+                       <span className={`inline-block w-2 h-2 rounded-full ${selectedProfile.isPremium ? 'bg-amber-500' : 'bg-gray-500'}`}></span>
+                       <p className="font-medium">
+                         {selectedProfile.isPremium ? 'Premium' : 'Standard'}
+                       </p>
+                     </div>
+                   </div>
+                   <div>
+                     <span className="text-sm text-gray-500 dark:text-gray-400">Trusted Badge</span>
                      <div className="flex items-center gap-2">
                        <span className={`inline-block w-2 h-2 rounded-full ${selectedProfile.isVerified ? 'bg-green-500' : 'bg-gray-500'}`}></span>
                        <p className="font-medium">
-                         {selectedProfile.isVerified ? 'Verified' : 'Not Verified'}
+                         {selectedProfile.isVerified ? 'Trusted' : 'Not Trusted'}
                        </p>
                      </div>
                    </div>

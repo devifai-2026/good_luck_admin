@@ -23,6 +23,8 @@ interface MatrimonyProfile {
   whatsappNumber: string;
   facebookLink: string;
   isVerified: boolean;
+  isPremium: boolean;
+  subscriptionTier: 'silver' | 'gold' | 'platinum' | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -86,14 +88,15 @@ const Matrimony = () => {
                 <th className="px-4 py-2 text-center">Gender</th>
                 <th className="px-4 py-2 text-center">Location</th>
                 <th className="px-4 py-2 text-center">Looking For</th>
-                <th className="px-4 py-2 text-center">Verified</th>
+                <th className="px-4 py-2 text-center">Premium</th>
+                <th className="px-4 py-2 text-center">Trusted</th>
                 <th className="px-4 py-2 text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-4">
+                  <td colSpan={8} className="text-center py-4">
                     <div className="flex justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                     </div>
@@ -109,9 +112,16 @@ const Matrimony = () => {
                     <td className="px-4 py-3 text-center capitalize">{profile.searching_for}</td>
                     <td className="px-4 py-3 text-center">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        profile.isPremium ? 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                      }`}>
+                        {profile.isPremium ? '★ Premium' : 'Standard'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         profile.isVerified ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                       }`}>
-                        {profile.isVerified ? 'Verified' : 'Pending'}
+                        {profile.isVerified ? 'Trusted' : 'Not Trusted'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -247,11 +257,23 @@ const Matrimony = () => {
                     <h4 className="font-semibold text-lg text-gray-800 dark:text-white mb-3">Status</h4>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Verification</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Plan Tier</span>
+                        <span className="font-medium capitalize">{selectedProfile.subscriptionTier ?? 'None'}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Premium Tag</span>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          selectedProfile.isPremium ? 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                        }`}>
+                          {selectedProfile.isPremium ? '★ Premium' : 'Standard'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Trusted Badge</span>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           selectedProfile.isVerified ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                         }`}>
-                          {selectedProfile.isVerified ? 'Verified' : 'Pending'}
+                          {selectedProfile.isVerified ? 'Trusted' : 'Not Trusted'}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
